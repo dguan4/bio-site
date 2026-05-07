@@ -91,10 +91,10 @@ export default function LanguageChart({ languages }: Props) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number, name: string) => [
-              `${value} repo${value !== 1 ? "s" : ""} (${Math.round((value / total) * 100)}%)`,
-              name,
-            ]}
+            formatter={(value, name) => {
+              const n = Number(value);
+              return [`${n} repo${n !== 1 ? "s" : ""} (${Math.round((n / total) * 100)}%)`, String(name)];
+            }}
             contentStyle={{
               backgroundColor: "#1c1c1c",
               border: "1px solid rgba(255,255,255,0.1)",

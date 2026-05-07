@@ -85,7 +85,7 @@ export default function ContributionHeatmap({ contributions, fromToken }: Props)
         )}
       </div>
 
-      <TooltipProvider delayDuration={100}>
+      <TooltipProvider delay={100}>
         <div className="overflow-x-auto pb-1">
           {/* Month labels */}
           <div
@@ -127,14 +127,14 @@ export default function ContributionHeatmap({ contributions, fromToken }: Props)
                   {week.map((day, di) =>
                     day ? (
                       <Tooltip key={di}>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="h-[11px] w-[11px] rounded-[2px] cursor-default"
-                            style={{
-                              backgroundColor: LEVEL_COLORS[day.level],
-                            }}
-                          />
-                        </TooltipTrigger>
+                        <TooltipTrigger
+                          render={
+                            <div
+                              className="h-[11px] w-[11px] rounded-[2px] cursor-default"
+                              style={{ backgroundColor: LEVEL_COLORS[day.level] }}
+                            />
+                          }
+                        />
                         <TooltipContent>
                           <p className="text-xs">
                             {day.count} contribution{day.count !== 1 ? "s" : ""} on{" "}
