@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import PortfolioTabs from "@/components/PortfolioTabs";
 import profileData from "@/profile.json";
 import type { Profile } from "@/lib/types";
@@ -13,7 +14,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      <PortfolioTabs profile={profile} />
+      <Suspense>
+        <PortfolioTabs profile={profile} />
+      </Suspense>
     </main>
   );
 }

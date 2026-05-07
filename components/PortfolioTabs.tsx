@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AboutTab from "@/components/tabs/AboutTab";
 import GitHubTab from "@/components/tabs/GitHubTab";
@@ -23,9 +24,23 @@ const TABS = [
   { value: "more",       label: "More" },
 ] as const;
 
+type TabValue = typeof TABS[number]["value"];
+const TAB_VALUES = TABS.map((t) => t.value) as string[];
+
 export default function PortfolioTabs({ profile, githubAvatar }: Props) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const rawTab = searchParams.get("tab") ?? "";
+  const activeTab: TabValue = TAB_VALUES.includes(rawTab) ? (rawTab as TabValue) : "about";
+
+  function onTabChange(tab: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
+
   return (
-    <Tabs defaultValue="about" className="w-full">
+    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
       <TabsList className="mb-6 flex w-full overflow-x-auto">
         {TABS.map((t) => (
           <TabsTrigger key={t.value} value={t.value} className="flex-1 min-w-max">
