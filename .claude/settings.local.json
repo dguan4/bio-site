@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//usr/**)",
+      "Read(//home/dg/.nvm/versions/**)",
+      "Read(//home/dg/.local/share/**)",
+      "Bash(export PATH=\"$HOME/.nvm/versions/node/v24.15.0/bin:$PATH\")",
+      "Bash(npm --version)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias=\"@/*\" --yes)"
+    ]
+  }
+}
