@@ -20,6 +20,38 @@ import type {
 let _heroes: DeadlockHero[] | null = null;
 let _items: DeadlockItem[] | null = null;
 
+// ── Recent players (localStorage) ────────────────────────────────────────────
+
+const RECENT_KEY = "dl_recent";
+const MAX_RECENT = 5;
+
+interface RecentPlayer {
+  input: string;
+  accountId: string;
+  name: string;
+}
+
+function loadRecent(): RecentPlayer[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]"); }
+  catch { return []; }
+}
+
+function saveRecent(player: RecentPlayer): RecentPlayer[] {
+  const list = loadRecent().filter((p) => p.accountId !== player.accountId);
+  const updated = [player, ...list].slice(0, MAX_RECENT);
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(updated)); } catch {}
+  return updated;
+}
+
+function labelFromInput(input: string): string {
+  const t = input.trim();
+  if (/^\d{17}$/.test(t)) return `…${t.slice(-8)}`;
+  const urlMatch = t.match(/\/profiles\/(\d{17})/);
+  if (urlMatch) return `…${urlMatch[1].slice(-8)}`;
+  return `#${t}`;
+}
+
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
 function parseAccountId(input: string): string | null {
@@ -257,9 +289,12 @@ function BuildCard({
     <Card className="border-border/50">
       <CardContent className="pt-3 pb-3 px-4 space-y-2">
         {/* Header row */}
-        <button
-          className="w-full flex items-start justify-between gap-3 text-left"
+        <div
+          className="w-full flex items-start justify-between gap-3 text-left cursor-pointer"
+          role="button"
+          tabIndex={0}
           onClick={() => setOpen((v) => !v)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((v) => !v); } }}
         >
           <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -288,7 +323,7 @@ function BuildCard({
               <ChevronRight className="size-3.5 text-muted-foreground" />
             )}
           </div>
-        </button>
+        </div>
 
         {/* Expanded: items by section */}
         {open && itemMap.size > 0 && (
@@ -323,6 +358,9 @@ export default function DeadlockTab() {
   const [itemMap, setItemMap] = useState<Map<number, DeadlockItem>>(new Map());
   const [heroList, setHeroList] = useState<DeadlockHero[]>([]);
 
+  // Recent players
+  const [recentPlayers, setRecentPlayers] = useState<RecentPlayer[]>([]);
+
   // Match history
   const [steamInput, setSteamInput] = useState("");
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -340,6 +378,9 @@ export default function DeadlockTab() {
   const [builds, setBuilds] = useState<DeadlockBuild[]>([]);
   const [buildsLoading, setBuildsLoading] = useState(false);
   const [buildsError, setBuildsError] = useState<string | null>(null);
+
+  // Load recent players from localStorage on mount
+  useEffect(() => { setRecentPlayers(loadRecent()); }, []);
 
   // Load reference data once
   useEffect(() => {
@@ -391,13 +432,37 @@ export default function DeadlockTab() {
       const res = await fetch(`/api/deadlock?type=matches&accountId=${aid}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-      setMatches(Array.isArray(data) ? data : (data.matches ?? []));
+      const loaded = Array.isArray(data) ? data : (data.matches ?? []);
+      setMatches(loaded);
+      if (loaded.length > 0) {
+        setRecentPlayers(saveRecent({ input: steamInput, accountId: aid, name: labelFromInput(steamInput) }));
+      }
     } catch (err) {
       setMatchesError(err instanceof Error ? err.message : "Failed to load matches");
     } finally {
       setMatchesLoading(false);
     }
   }, [steamInput]);
+
+  const loadPlayer = useCallback((player: RecentPlayer) => {
+    setSteamInput(player.input);
+    setAccountId(player.accountId);
+    setMatchesLoading(true);
+    setMatchesError(null);
+    setMatches([]);
+    setHeroFilter(null);
+    setExpandedMatchId(null);
+
+    fetch(`/api/deadlock?type=matches&accountId=${player.accountId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const loaded = Array.isArray(data) ? data : (data.matches ?? []);
+        setMatches(loaded);
+        setRecentPlayers(saveRecent({ ...player }));
+      })
+      .catch((err) => setMatchesError(err instanceof Error ? err.message : "Failed to load matches"))
+      .finally(() => setMatchesLoading(false));
+  }, []);
 
   const toggleMatch = useCallback(
     async (matchId: number) => {
@@ -503,6 +568,22 @@ export default function DeadlockTab() {
             Search
           </Button>
         </div>
+
+        {recentPlayers.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Recent:</span>
+            {recentPlayers.map((p) => (
+              <button
+                key={p.accountId}
+                onClick={() => loadPlayer(p)}
+                disabled={matchesLoading}
+                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors disabled:opacity-50 font-mono"
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {matchesError && <p className="text-sm text-destructive">{matchesError}</p>}
 
