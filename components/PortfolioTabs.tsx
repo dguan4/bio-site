@@ -5,6 +5,7 @@ import AboutTab from "@/components/tabs/AboutTab";
 import GitHubTab from "@/components/tabs/GitHubTab";
 import ProjectsTab from "@/components/tabs/ProjectsTab";
 import FlashcardsTab from "@/components/tabs/FlashcardsTab";
+import DeadlockTab from "@/components/tabs/DeadlockTab";
 import MoreTab from "@/components/tabs/MoreTab";
 import type { Profile } from "@/lib/types";
 
@@ -18,6 +19,7 @@ const TABS = [
   { value: "github",     label: "GitHub" },
   { value: "projects",   label: "Projects" },
   { value: "flashcards", label: "Flashcards" },
+  { value: "deadlock",   label: "Deadlock" },
   { value: "more",       label: "More" },
 ] as const;
 
@@ -46,6 +48,10 @@ export default function PortfolioTabs({ profile, githubAvatar }: Props) {
 
       <TabsContent value="flashcards">
         <FlashcardsTab />
+      </TabsContent>
+
+      <TabsContent value="deadlock">
+        <DeadlockTab />
       </TabsContent>
 
       <TabsContent value="more">

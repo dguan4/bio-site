@@ -8,7 +8,18 @@
       "Bash(npm --version)",
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias=\"@/*\" --yes)",
       "Bash(npm install *)",
-      "Bash(npx shadcn@latest init --yes --defaults)"
+      "Bash(npx shadcn@latest init --yes --defaults)",
+      "Bash(mkdir -p /home/dguan/dev/bio-site/app/api/deadlock)",
+      "Bash(npx tsc *)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(npx next *)",
+      "Bash(node_modules/.bin/next build *)",
+      "WebFetch(domain:api.deadlock-api.com)",
+      "WebFetch(domain:assets.deadlock-api.com)",
+      "Bash(curl -s \"https://api.deadlock-api.com/v1/items?language=english\" -w \"\\\\nHTTP_STATUS:%{http_code}\")"
+    ],
+    "additionalDirectories": [
+      "/home/dguan/dev/bio-site/app/api"
     ]
   }
 }
