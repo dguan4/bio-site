@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     if (type === "match") {
       const matchId = searchParams.get("matchId");
       if (!matchId) return NextResponse.json({ error: "matchId required" }, { status: 400 });
-      const data = await proxy(`${API}/matches/${matchId}`, 3600);
+      const data = await proxy(`${API}/matches/${matchId}/metadata`, 3600);
       return NextResponse.json(data);
     }
 

@@ -170,36 +170,61 @@ export interface DeadlockBuild {
   num_weekly_favorites: number;
 }
 
+// api.deadlock-api.com/v1/players/{id}/match-history
 export interface DeadlockMatchSummary {
   match_id: number;
   hero_id: number;
-  team?: number;
-  match_result?: number;
-  won?: boolean;
-  kills?: number;
-  deaths?: number;
-  assists?: number;
-  start_time?: number;
-  duration_s?: number;
+  player_team: number;   // 1 or 2
+  match_result: number;  // winning team number (1 or 2); win = match_result === player_team
+  player_kills: number;
+  player_deaths: number;
+  player_assists: number;
+  start_time: number;
+  match_duration_s: number;
   net_worth?: number;
 }
 
-export interface DeadlockMatchPlayer {
+// api.deadlock-api.com/v1/matches/{id}/metadata
+export interface DeadlockMatchItemEvent {
+  item_id: number;
+  upgrade_id: number; // non-zero when the item was later upgraded
+  game_time_s: number;
+  sold_time_s: number; // non-zero when the item was sold; 0 = still in inventory
+}
+
+export interface DeadlockStatSnapshot {
+  time_stamp_s: number;
+  net_worth: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  player_damage: number;
+  player_healing: number;
+  self_healing: number;
+  last_hits?: number;
+  denies?: number;
+}
+
+export interface DeadlockMatchMetaPlayer {
   account_id: number;
   hero_id: number;
-  team?: number;
-  match_result?: number;
-  won?: boolean;
-  kills?: number;
-  deaths?: number;
-  assists?: number;
-  items?: number[];
-  net_worth?: number;
+  team: number;        // 0 or 1
+  kills: number;
+  deaths: number;
+  assists: number;
+  net_worth: number;
+  level: number;
+  last_hits: number;
+  denies: number;
+  items: DeadlockMatchItemEvent[];
+  stats: DeadlockStatSnapshot[];
 }
 
 export interface DeadlockMatchDetail {
-  match_id: number;
-  start_time?: number;
-  duration_s?: number;
-  players: DeadlockMatchPlayer[];
+  match_info: {
+    duration_s: number;
+    start_time: number;
+    winning_team: number; // 0 or 1
+    players: DeadlockMatchMetaPlayer[];
+  };
 }

@@ -16,7 +16,8 @@
       "Bash(node_modules/.bin/next build *)",
       "WebFetch(domain:api.deadlock-api.com)",
       "WebFetch(domain:assets.deadlock-api.com)",
-      "Bash(curl -s \"https://api.deadlock-api.com/v1/items?language=english\" -w \"\\\\nHTTP_STATUS:%{http_code}\")"
+      "Bash(curl -s \"https://api.deadlock-api.com/v1/items?language=english\" -w \"\\\\nHTTP_STATUS:%{http_code}\")",
+      "WebFetch(domain:github.com)"
     ],
     "additionalDirectories": [
       "/home/dguan/dev/bio-site/app/api"

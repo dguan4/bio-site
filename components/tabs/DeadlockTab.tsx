@@ -13,6 +13,7 @@ import type {
   DeadlockBuild,
   DeadlockMatchSummary,
   DeadlockMatchDetail,
+  DeadlockMatchMetaPlayer,
 } from "@/lib/types";
 
 // Module-level cache so re-mounting never re-fetches
@@ -82,12 +83,8 @@ function describeBuild(itemIds: number[], itemMap: Map<number, DeadlockItem>): s
   return tags;
 }
 
-function resolveWin(match: DeadlockMatchSummary): boolean | null {
-  if (match.won !== undefined) return match.won;
-  if (match.match_result !== undefined && match.team !== undefined) {
-    return match.match_result === match.team;
-  }
-  return null;
+function resolveWin(match: DeadlockMatchSummary): boolean {
+  return match.match_result === match.player_team;
 }
 
 const CATEGORY_CLASS = {
@@ -144,6 +141,89 @@ function ItemGrid({ itemIds, itemMap }: { itemIds: number[]; itemMap: Map<number
               />
             )}
             <span className="text-center leading-tight max-w-[64px]">{item.name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+
+function Sparkline({ values }: { values: number[] }) {
+  if (values.length < 2) return null;
+  const W = 96, H = 28, pad = 2;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const pts = values
+    .map((v, i) => {
+      const x = pad + (i / (values.length - 1)) * (W - pad * 2);
+      const y = H - pad - ((v - min) / range) * (H - pad * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg width={W} height={H} className="overflow-visible">
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/50" />
+      {values.map((v, i) => {
+        const x = pad + (i / (values.length - 1)) * (W - pad * 2);
+        const y = H - pad - ((v - min) / range) * (H - pad * 2);
+        return <circle key={i} cx={x} cy={y} r="2" className="fill-muted-foreground/70" />;
+      })}
+    </svg>
+  );
+}
+
+// ── Scoreboard ────────────────────────────────────────────────────────────────
+
+function Scoreboard({
+  players,
+  userAccountId,
+  heroMap,
+}: {
+  players: DeadlockMatchMetaPlayer[];
+  userAccountId: number;
+  heroMap: Map<number, DeadlockHero>;
+}) {
+  const userTeam = players.find((p) => p.account_id === userAccountId)?.team ?? -1;
+
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+      {[0, 1].map((teamNum) => {
+        const label = teamNum === userTeam ? "Your Team" : "Enemy Team";
+        const teamPlayers = players
+          .filter((p) => p.team === teamNum)
+          .sort((a, b) => b.net_worth - a.net_worth);
+
+        return (
+          <div key={teamNum} className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pb-0.5">
+              {label}
+            </p>
+            {teamPlayers.map((p, i) => {
+              const hero = heroMap.get(p.hero_id);
+              const isUser = p.account_id === userAccountId;
+              const iconSrc = hero?.images?.icon_image_small;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center gap-1.5 text-[11px] ${isUser ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                >
+                  {iconSrc ? (
+                    <img src={iconSrc} alt="" className="size-4 rounded-sm shrink-0 object-cover" loading="lazy" />
+                  ) : (
+                    <div className="size-4 rounded-sm bg-muted shrink-0" />
+                  )}
+                  <span className="flex-1 truncate">{hero?.name ?? `Hero ${p.hero_id}`}</span>
+                  <span className="tabular-nums">{p.kills}/{p.deaths}/{p.assists}</span>
+                  <span className="tabular-nums text-[10px] w-8 text-right">
+                    {(p.net_worth / 1000).toFixed(1)}k
+                  </span>
+                </div>
+              );
+            })}
           </div>
         );
       })}
@@ -373,21 +453,29 @@ export default function DeadlockTab() {
     .filter((h) => !heroSearch || h.name.toLowerCase().includes(heroSearch.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  function getPlayerItems(matchId: number): DeadlockItem[] {
+  function getFinalItemIds(matchId: number): number[] {
     const detail = matchDetails.get(matchId);
     if (!detail || !accountId) return [];
     const aid = parseInt(accountId, 10);
-    const player = detail.players.find((p) => p.account_id === aid);
-    return (player?.items ?? []).flatMap((id) => itemMap.get(id) ?? []);
+    const player = detail.match_info.players.find((p) => p.account_id === aid);
+    if (!player?.items?.length) return [];
+    // Keep items still in inventory (sold_time_s === 0), dedup
+    const seen = new Set<number>();
+    for (const ev of player.items) {
+      if (ev.sold_time_s === 0) seen.add(ev.item_id);
+    }
+    return Array.from(seen);
+  }
+
+  function getPlayerItems(matchId: number): DeadlockItem[] {
+    return getFinalItemIds(matchId).flatMap((id) => itemMap.get(id) ?? []);
   }
 
   function getPlayerBuildTags(matchId: number): string[] {
-    const detail = matchDetails.get(matchId);
-    if (!detail || !accountId || itemMap.size === 0) return [];
-    const aid = parseInt(accountId, 10);
-    const player = detail.players.find((p) => p.account_id === aid);
-    if (!player?.items?.length) return [];
-    return describeBuild(player.items, itemMap);
+    if (itemMap.size === 0) return [];
+    const ids = getFinalItemIds(matchId);
+    if (!ids.length) return [];
+    return describeBuild(ids, itemMap);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -449,8 +537,19 @@ export default function DeadlockTab() {
                 const win = resolveWin(match);
                 const isExpanded = expandedMatchId === match.match_id;
                 const isLoadingDetail = detailLoadingId === match.match_id;
+                const detail = matchDetails.get(match.match_id);
                 const items = isExpanded ? getPlayerItems(match.match_id) : [];
                 const buildTags = isExpanded ? getPlayerBuildTags(match.match_id) : [];
+
+                const aid = parseInt(accountId ?? "0", 10);
+                const userMetaPlayer: DeadlockMatchMetaPlayer | null =
+                  isExpanded && detail
+                    ? (detail.match_info.players.find((p) => p.account_id === aid) ?? null)
+                    : null;
+                const finalStats = userMetaPlayer?.stats?.length
+                  ? userMetaPlayer.stats[userMetaPlayer.stats.length - 1]
+                  : null;
+                const nwHistory = (userMetaPlayer?.stats ?? []).map((s) => s.net_worth);
 
                 return (
                   <Card
@@ -465,21 +564,17 @@ export default function DeadlockTab() {
                     <CardContent className="py-3 px-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          {win !== null && (
-                            <span className={`text-xs font-bold w-4 shrink-0 ${win ? "text-green-500" : "text-red-500"}`}>
-                              {win ? "W" : "L"}
-                            </span>
-                          )}
+                          <span className={`text-xs font-bold w-4 shrink-0 ${win ? "text-green-500" : "text-red-500"}`}>
+                            {win ? "W" : "L"}
+                          </span>
                           <span className="font-medium text-sm truncate">{getHeroName(match.hero_id)}</span>
-                          {match.kills !== undefined && (
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {match.kills}/{match.deaths ?? "?"}/{match.assists ?? "?"}
-                            </span>
-                          )}
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {match.player_kills}/{match.player_deaths}/{match.player_assists}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2.5 shrink-0">
-                          {match.duration_s !== undefined && (
-                            <span className="text-xs text-muted-foreground">{formatDuration(match.duration_s)}</span>
+                          {match.match_duration_s > 0 && (
+                            <span className="text-xs text-muted-foreground">{formatDuration(match.match_duration_s)}</span>
                           )}
                           {match.start_time !== undefined && (
                             <span className="hidden sm:inline text-xs text-muted-foreground">{formatDate(match.start_time)}</span>
@@ -492,24 +587,67 @@ export default function DeadlockTab() {
                       </div>
 
                       {isExpanded && (
-                        <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="mt-3 pt-3 border-t border-border/50 space-y-3" onClick={(e) => e.stopPropagation()}>
                           {isLoadingDetail ? (
-                            <Skeleton className="h-12 w-full" />
-                          ) : items.length > 0 ? (
+                            <Skeleton className="h-24 w-full" />
+                          ) : (
                             <>
-                              {buildTags.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {buildTags.map((t) => (
-                                    <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
-                                  ))}
+                              {/* Build tags + items */}
+                              {items.length > 0 && (
+                                <div className="space-y-2">
+                                  {buildTags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {buildTags.map((t) => (
+                                        <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <ItemGrid itemIds={items.map((i) => i.id)} itemMap={itemMap} />
                                 </div>
                               )}
-                              <ItemGrid itemIds={items.map((i) => i.id)} itemMap={itemMap} />
+
+                              {/* Scoreboard */}
+                              {detail && (
+                                <>
+                                  {items.length > 0 && <Separator />}
+                                  <Scoreboard
+                                    players={detail.match_info.players}
+                                    userAccountId={aid}
+                                    heroMap={heroMap}
+                                  />
+                                </>
+                              )}
+
+                              {/* Damage / healing / net worth sparkline */}
+                              {(finalStats || nwHistory.length > 1) && (
+                                <div className="flex items-center gap-4 flex-wrap">
+                                  {finalStats && finalStats.player_damage > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      <span className="font-medium text-foreground">
+                                        {finalStats.player_damage.toLocaleString()}
+                                      </span>{" "}dmg dealt
+                                    </span>
+                                  )}
+                                  {finalStats && finalStats.player_healing > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      <span className="font-medium text-foreground">
+                                        {finalStats.player_healing.toLocaleString()}
+                                      </span>{" "}healed
+                                    </span>
+                                  )}
+                                  {nwHistory.length > 1 && (
+                                    <div className="flex items-center gap-1.5 ml-auto text-muted-foreground">
+                                      <span className="text-[10px]">NW</span>
+                                      <Sparkline values={nwHistory} />
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {!detail && (
+                                <p className="text-xs text-muted-foreground">Loading details…</p>
+                              )}
                             </>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">
-                              {matchDetails.has(match.match_id) ? "No item data for this match." : "Loading details…"}
-                            </p>
                           )}
                         </div>
                       )}
