@@ -1,0 +1,78 @@
+{
+  "_notes": {
+    "name": "Your full display name (required)",
+    "title": "Professional title shown below your name on the About tab",
+    "avatar": "URL to a profile photo. Leave empty to fall back to your GitHub avatar",
+    "bio": "A short bio paragraph. Supports plain text only",
+    "location": "Optional city / region string",
+    "email": "Optional contact email (also add it to 'social' as an Email entry)",
+    "skills": "Array of technology names rendered as pill badges on the About tab",
+    "social": "Array of {platform, url} objects. Recognized platforms: GitHub, LinkedIn, Twitter, Bluesky, Email, Website",
+    "experience": "Work history. 'start' and 'end' are 'YYYY-MM' strings. Use 'present' for current role",
+    "projectOverrides": "External or non-GitHub projects. These are merged with your pinned GitHub repos on the Projects tab. Set 'featured: true' to pin them to the top"
+  },
+
+  "name": "David Guan",
+  "title": "Senior Software Engineer",
+  "avatar": "",
+  "bio": "",
+  "location": "Greater Chicago Area",
+  "email": "",
+
+  "skills": [
+    "JavaScript",
+    "Python"
+  ],
+
+  "social": [
+    { "platform": "GitHub",   "url": "https://github.com/your-username" },
+    { "platform": "LinkedIn", "url": "https://www.linkedin.com/in/dguan4/" }
+  ],
+
+  "experience": [
+    {
+      "company": "Velocity Global",
+      "role": "Senior Software Engineer",
+      "start": "2023-08",
+      "end": "present",
+      "description": ""
+    },
+    {
+      "company": "Amazon Web Services (AWS)",
+      "role": "Software Development Engineer",
+      "start": "2022-10",
+      "end": "2023-06",
+      "description": ""
+    },
+    {
+      "company": "JPMorgan Chase & Co.",
+      "role": "Software Engineer",
+      "start": "2021-09",
+      "end": "2022-08",
+      "description": ""
+    },
+    {
+      "company": "One North, a TEKsystems company",
+      "role": "Senior Developer",
+      "start": "2021-01",
+      "end": "2021-08",
+      "description": ""
+    },
+    {
+      "company": "One North, a TEKsystems company",
+      "role": "Developer",
+      "start": "2019-01",
+      "end": "2020-12",
+      "description": ""
+    },
+    {
+      "company": "One North, a TEKsystems company",
+      "role": "Associate Developer",
+      "start": "2017-06",
+      "end": "2018-12",
+      "description": ""
+    }
+  ],
+
+  "projectOverrides": []
+}
