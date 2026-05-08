@@ -73,6 +73,7 @@ export interface GitHubEvent {
   };
   payload: {
     commits?: Array<{ message: string; sha: string }>;
+    size?: number;
     action?: string;
     ref?: string;
     ref_type?: string;

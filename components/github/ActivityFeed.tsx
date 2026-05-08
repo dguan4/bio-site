@@ -11,11 +11,12 @@ function formatEventAction(event: GitHubEvent): { icon: React.ComponentType<{ cl
   switch (event.type) {
     case "PushEvent": {
       const commits = event.payload.commits ?? [];
-      const n = commits.length;
+      const n = event.payload.size ?? commits.length;
       const msg = commits[0]?.message?.split("\n")[0] ?? "";
+      const countStr = n > 0 ? `${n} commit${n !== 1 ? "s" : ""} ` : "";
       return {
         icon: GitCommit,
-        text: `Pushed ${n} commit${n !== 1 ? "s" : ""} to ${repo}${msg ? ` — ${msg}` : ""}`,
+        text: `Pushed ${countStr}to ${repo}${msg ? ` — ${msg}` : ""}`,
       };
     }
     case "PullRequestEvent": {
