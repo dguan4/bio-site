@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       const heroId = searchParams.get("heroId");
       if (!heroId) return NextResponse.json({ error: "heroId required" }, { status: 400 });
       const data = await proxy(
-        `${API}/builds?hero_id=${heroId}&sort_by=weekly_favorites&sort_direction=desc&only_latest=true&build_language=English&limit=5`,
+        `${API}/builds?hero_id=${heroId}&sort_by=weekly_favorites&sort_direction=desc&only_latest=true&build_language=English&limit=20`,
         1800
       );
       return NextResponse.json(data);
