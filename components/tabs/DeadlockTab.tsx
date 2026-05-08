@@ -276,12 +276,12 @@ function BuildCard({
   const hb = build.hero_build;
 
   // Collect all item IDs across all mod_categories (core + optional)
-  const allItemIds = hb.details.mod_categories.flatMap((cat) =>
-    cat.mods.map((m) => m.ability_id)
-  );
-  const coreItemIds = hb.details.mod_categories
+  // API returns null for details/mods on some builds
+  const categories = hb.details?.mod_categories ?? [];
+  const allItemIds = categories.flatMap((cat) => (cat.mods ?? []).map((m) => m.ability_id));
+  const coreItemIds = categories
     .filter((cat) => !cat.optional)
-    .flatMap((cat) => cat.mods.map((m) => m.ability_id));
+    .flatMap((cat) => (cat.mods ?? []).map((m) => m.ability_id));
 
   const tags = itemMap.size > 0 ? describeBuild(coreItemIds.length > 0 ? coreItemIds : allItemIds, itemMap) : [];
 
@@ -328,7 +328,7 @@ function BuildCard({
         {/* Expanded: items by section */}
         {open && itemMap.size > 0 && (
           <div className="pt-1 space-y-3">
-            {hb.details.mod_categories.map((section, i) => (
+            {categories.map((section, i) => (
               <div key={i} className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -339,7 +339,7 @@ function BuildCard({
                   )}
                 </div>
                 <ItemGrid
-                  itemIds={section.mods.map((m) => m.ability_id)}
+                  itemIds={(section.mods ?? []).map((m) => m.ability_id)}
                   itemMap={itemMap}
                 />
               </div>
