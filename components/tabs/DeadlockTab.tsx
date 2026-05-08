@@ -378,6 +378,7 @@ export default function DeadlockTab() {
   const [builds, setBuilds] = useState<DeadlockBuild[]>([]);
   const [buildsLoading, setBuildsLoading] = useState(false);
   const [buildsError, setBuildsError] = useState<string | null>(null);
+  const [buildSort, setBuildSort] = useState<"weekly_favorites" | "favorites">("weekly_favorites");
 
   // Load recent players from localStorage on mount
   useEffect(() => { setRecentPlayers(loadRecent()); }, []);
@@ -484,14 +485,14 @@ export default function DeadlockTab() {
 
   // ── Hero Builds handlers ──────────────────────────────────────────────────
 
-  const fetchBuilds = useCallback(async (hero: DeadlockHero) => {
+  const fetchBuilds = useCallback(async (hero: DeadlockHero, sort: "weekly_favorites" | "favorites") => {
     setSelectedHero(hero);
     setBuildsLoading(true);
     setBuildsError(null);
     setBuilds([]);
 
     try {
-      const res = await fetch(`/api/deadlock?type=builds&heroId=${hero.id}`);
+      const res = await fetch(`/api/deadlock?type=builds&heroId=${hero.id}&sortBy=${sort}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       setBuilds(Array.isArray(data) ? data : []);
@@ -501,6 +502,11 @@ export default function DeadlockTab() {
       setBuildsLoading(false);
     }
   }, []);
+
+  function handleBuildSortChange(sort: "weekly_favorites" | "favorites") {
+    setBuildSort(sort);
+    if (selectedHero) fetchBuilds(selectedHero, sort);
+  }
 
   // ── Derived values ────────────────────────────────────────────────────────
 
@@ -745,13 +751,29 @@ export default function DeadlockTab() {
 
       {/* ── Hero Builds ───────────────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            Hero Builds
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Pick a hero to see the top community builds this week.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              Hero Builds
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Pick a hero to see the top community builds.
+            </p>
+          </div>
+          <div className="flex rounded-lg border border-border overflow-hidden shrink-0">
+            <button
+              onClick={() => handleBuildSortChange("weekly_favorites")}
+              className={`px-2.5 py-1 text-xs transition-colors ${buildSort === "weekly_favorites" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              This Week
+            </button>
+            <button
+              onClick={() => handleBuildSortChange("favorites")}
+              className={`px-2.5 py-1 text-xs transition-colors border-l border-border ${buildSort === "favorites" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              All Time
+            </button>
+          </div>
         </div>
 
         {/* Hero search + grid */}
@@ -775,7 +797,7 @@ export default function DeadlockTab() {
                   key={hero.id}
                   variant={selectedHero?.id === hero.id ? "default" : "outline"}
                   size="sm"
-                  onClick={() => fetchBuilds(hero)}
+                  onClick={() => fetchBuilds(hero, buildSort)}
                   disabled={buildsLoading}
                 >
                   {hero.name}
