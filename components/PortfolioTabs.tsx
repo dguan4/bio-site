@@ -7,7 +7,7 @@ import GitHubTab from "@/components/tabs/GitHubTab";
 import ProjectsTab from "@/components/tabs/ProjectsTab";
 import FlashcardsTab from "@/components/tabs/FlashcardsTab";
 import DeadlockTab from "@/components/tabs/DeadlockTab";
-import MoreTab from "@/components/tabs/MoreTab";
+import NowTab from "@/components/tabs/NowTab";
 import type { Profile } from "@/lib/types";
 
 interface Props {
@@ -21,7 +21,7 @@ const TABS = [
   { value: "projects",   label: "Projects" },
   { value: "flashcards", label: "Flashcards" },
   { value: "deadlock",   label: "Deadlock" },
-  { value: "more",       label: "More" },
+  { value: "now",        label: "Now" },
 ] as const;
 
 type TabValue = typeof TABS[number]["value"];
@@ -30,8 +30,11 @@ const TAB_VALUES = TABS.map((t) => t.value) as string[];
 export default function PortfolioTabs({ profile, githubAvatar }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const hidden = new Set(profile.hiddenTabs ?? []);
+  const visibleTabs = TABS.filter((t) => !hidden.has(t.value));
   const rawTab = searchParams.get("tab") ?? "";
-  const activeTab: TabValue = TAB_VALUES.includes(rawTab) ? (rawTab as TabValue) : "about";
+  const activeTab: TabValue =
+    TAB_VALUES.includes(rawTab) && !hidden.has(rawTab) ? (rawTab as TabValue) : "about";
 
   function onTabChange(tab: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -42,7 +45,7 @@ export default function PortfolioTabs({ profile, githubAvatar }: Props) {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
       <TabsList className="mb-6 flex w-full overflow-x-auto">
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <TabsTrigger key={t.value} value={t.value} className="flex-1 min-w-max">
             {t.label}
           </TabsTrigger>
@@ -69,8 +72,8 @@ export default function PortfolioTabs({ profile, githubAvatar }: Props) {
         <DeadlockTab />
       </TabsContent>
 
-      <TabsContent value="more">
-        <MoreTab />
+      <TabsContent value="now">
+        <NowTab />
       </TabsContent>
     </Tabs>
   );

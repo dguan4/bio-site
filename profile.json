@@ -9,23 +9,28 @@
     "skills": "Array of technology names rendered as pill badges on the About tab",
     "social": "Array of {platform, url} objects. Recognized platforms: GitHub, LinkedIn, Twitter, Bluesky, Email, Website",
     "experience": "Work history. 'start' and 'end' are 'YYYY-MM' strings. Use 'present' for current role",
-    "projectOverrides": "External or non-GitHub projects. These are merged with your pinned GitHub repos on the Projects tab. Set 'featured: true' to pin them to the top"
+    "projectOverrides": "External or non-GitHub projects. These are merged with your pinned GitHub repos on the Projects tab. Set 'featured: true' to pin them to the top",
+    "hiddenTabs": "Tabs to hide from the UI. Valid values: 'about', 'github', 'projects', 'flashcards', 'deadlock', 'now'"
   },
+
+  "hiddenTabs": ["now"],
 
   "name": "David Guan",
   "title": "Senior Software Engineer",
+  "typingPhrases": [
+    "Senior Software Engineer",
+    "Deadlock Enjoyer",
+    "Builder of Things"
+  ],
   "avatar": "",
   "bio": "",
   "location": "Greater Chicago Area",
   "email": "",
 
-  "skills": [
-    "JavaScript",
-    "Python"
-  ],
+  "skills": ["JavaScript", "Python"],
 
   "social": [
-    { "platform": "GitHub",   "url": "https://github.com/your-username" },
+    { "platform": "GitHub", "url": "https://github.com/dguan4" },
     { "platform": "LinkedIn", "url": "https://www.linkedin.com/in/dguan4/" }
   ],
 

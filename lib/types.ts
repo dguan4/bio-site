@@ -26,6 +26,8 @@ export interface ProjectOverride {
 export interface Profile {
   name: string;
   title: string;
+  typingPhrases?: string[];
+  hiddenTabs?: string[];
   avatar?: string;
   bio: string;
   location?: string;

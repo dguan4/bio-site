@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { MapPin, Mail } from "lucide-react";
 import type { Profile } from "@/lib/types";
+import TypingText from "@/components/about/TypingText";
 
 interface Props {
   profile: Profile;
@@ -28,7 +29,11 @@ export default function Bio({ profile, githubAvatar }: Props) {
       <div className="flex-1 space-y-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{profile.name}</h1>
-          <p className="text-muted-foreground">{profile.title}</p>
+          {profile.typingPhrases?.length ? (
+            <TypingText phrases={profile.typingPhrases} className="text-muted-foreground" />
+          ) : (
+            <p className="text-muted-foreground">{profile.title}</p>
+          )}
         </div>
 
         <p className="text-sm leading-relaxed max-w-prose">{profile.bio}</p>
