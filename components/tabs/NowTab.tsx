@@ -29,6 +29,7 @@ interface NotionBlock {
 interface NowData {
   lastEdited: string;
   blocks: NotionBlock[];
+  children: Record<string, NotionBlock[]>;
 }
 
 // ── Rich text renderer ────────────────────────────────────────────────────────
@@ -79,7 +80,7 @@ function richText(block: NotionBlock, key: string): NotionRichText[] {
 
 // ── Block renderer ────────────────────────────────────────────────────────────
 
-function Block({ block }: { block: NotionBlock }) {
+function Block({ block, children }: { block: NotionBlock; children: Record<string, NotionBlock[]> }) {
   switch (block.type) {
     case "paragraph": {
       const rt = richText(block, "paragraph");
@@ -122,6 +123,54 @@ function Block({ block }: { block: NotionBlock }) {
             <RichText items={todo.rich_text} />
           </span>
         </div>
+      );
+    }
+    case "table": {
+      const { has_column_header } = block.table as { has_column_header: boolean };
+      const rows = children[block.id] ?? [];
+      return (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <tbody>
+              {rows.map((row, ri) => {
+                const cells = (row.table_row as { cells: NotionRichText[][] }).cells;
+                const isHeader = ri === 0 && has_column_header;
+                return (
+                  <tr key={row.id} className="border-b border-border">
+                    {cells.map((cell, ci) =>
+                      isHeader ? (
+                        <th key={ci} className="px-3 py-2 text-left font-semibold bg-muted">
+                          <RichText items={cell} />
+                        </th>
+                      ) : (
+                        <td key={ci} className="px-3 py-2">
+                          <RichText items={cell} />
+                        </td>
+                      ),
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case "toggle": {
+      const rt = richText(block, "toggle");
+      const inner = children[block.id] ?? [];
+      return (
+        <details className="group">
+          <summary className="cursor-pointer list-none flex items-center gap-2 font-medium">
+            <span className="transition-transform group-open:rotate-90">▶</span>
+            <RichText items={rt} />
+          </summary>
+          <div className="mt-2 ml-5 space-y-2">
+            {inner.map((child) => (
+              <Block key={child.id} block={child} children={children} />
+            ))}
+          </div>
+        </details>
       );
     }
     default:
@@ -211,7 +260,7 @@ export default function NowTab() {
 
       <div className="space-y-3">
         {data.blocks.map((block) => (
-          <Block key={block.id} block={block} />
+          <Block key={block.id} block={block} children={data.children} />
         ))}
       </div>
     </div>

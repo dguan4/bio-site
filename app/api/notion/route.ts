@@ -10,6 +10,16 @@ function headers() {
   };
 }
 
+async function fetchBlocks(blockId: string, h: HeadersInit) {
+  const res = await fetch(
+    `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`,
+    { headers: h, cache: "no-store" },
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.results as unknown[];
+}
+
 export async function GET() {
   const pageId = process.env.NOTION_NOW_PAGE_ID;
   const token = process.env.NOTION_API_KEY;
@@ -20,15 +30,12 @@ export async function GET() {
 
   const h = headers();
 
-  const [pageRes, blocksRes] = await Promise.all([
+  const [pageRes, topBlocks] = await Promise.all([
     fetch(`https://api.notion.com/v1/pages/${pageId}`, {
       headers: h,
-      next: { revalidate: 300 },
+      cache: "no-store",
     }),
-    fetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`, {
-      headers: h,
-      next: { revalidate: 300 },
-    }),
+    fetchBlocks(pageId, h),
   ]);
 
   if (!pageRes.ok) {
@@ -37,18 +44,23 @@ export async function GET() {
       { status: pageRes.status },
     );
   }
-  if (!blocksRes.ok) {
-    return NextResponse.json(
-      { error: `Notion blocks fetch failed: ${blocksRes.status}` },
-      { status: blocksRes.status },
-    );
-  }
 
   const page = await pageRes.json();
-  const blocks = await blocksRes.json();
+
+  // Fetch one level of children for any block that needs it (tables, toggles, etc.)
+  const blocksNeedingChildren = (topBlocks as Array<{ id: string; has_children: boolean }>).filter(
+    (b) => b.has_children,
+  );
+
+  const childEntries = await Promise.all(
+    blocksNeedingChildren.map(async (b) => [b.id, await fetchBlocks(b.id, h)] as const),
+  );
+
+  const children = Object.fromEntries(childEntries);
 
   return NextResponse.json({
     lastEdited: page.last_edited_time as string,
-    blocks: blocks.results as unknown[],
+    blocks: topBlocks,
+    children,
   });
 }
