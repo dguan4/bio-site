@@ -44,7 +44,7 @@ export default function PortfolioTabs({ profile, githubAvatar }: Props) {
 
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList className="mb-6 flex w-full overflow-x-auto">
+      <TabsList className="mb-6 flex w-full overflow-x-auto overflow-y-hidden">
         {visibleTabs.map((t) => (
           <TabsTrigger key={t.value} value={t.value} className="flex-1 min-w-max">
             {t.label}
